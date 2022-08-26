@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">Speech Train</string>
+    <string name="login_tv_account">账号：</string>
+    <string name="login_et_account_hint">发音人编号</string>
+    <string name="login_tv_pwd">密码：</string>
+    <string name="login_tv_remember_pwd">记住密码</string>
+    <string name="login_btn_login">登录</string>
+    <string name="login_tv_version">当前版本：%1$s</string>
+
+    <string name="ques_tv_title">简要用户信息收集</string>
+    <string name="ques_tv_weixin">微信号：</string>
+    <string name="ques_tv_tele">手机号：</string>
+    <string name="ques_tv_name">姓名：</string>
+    <string name="ques_tv_agreement">我同意以上信息blablabla</string>
+    <string name="ques_btn_submit">提交</string>
+
+    <string name="option_btn_confirm">确认</string>
+    <string name="option_tv_repeat">重复次数：</string>
+    <string name="option_tv_graph">语料曲线：</string>
+    <string name="option_tv_review">复习占比：</string>
+    <string name="option_tv_read_mode">模仿方式：</string>
+    <string name="option_tv_content">训练内容：</string>
+    <string name="option_tv_quantity">训练量：</string>
+    <string name="option_tv_title">训练模式选择</string>
+
+    <string name="train_default_section_name">Section 1</string>
+    <string name="train_default_sentence_id">ERROR</string>
+    <string name="train_default_sentence">网络异常</string>
+    <string name="train_graph_description">语料图</string>
+    <string name="train_img_description_volume">音量大小</string>
+    <string name="train_btn_next">下一句</string>
+
+    <string name="train_finished_all_number">%1$d/%2$d</string>
+    <string name="train_tv_finish_train">训练结束，正在上传录音，请不要关闭应用</string>
+</resources>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="option_quantity">
+        <item>少</item>
+        <item>中</item>
+        <item>大</item>
+    </string-array>
+    
+    <string-array name="option_content">
+        <item>单词</item>
+        <item>短语</item>
+        <item>短句</item>
+        <item>语篇</item>
+    </string-array>
+
+    <string-array name="option_read_mode">
+        <item>LAR</item>
+        <item>RSI</item>
+    </string-array>
+
+    <string-array name="option_review">
+        <item>30%</item>
+        <item>50%</item>
+        <item>70%</item>
+    </string-array>
+
+    <string-array name="option_graph">
+        <item>不显示语料图</item>
+        <item>显示语料图</item>
+    </string-array>
+
+    <string-array name="option_repeat">
+        <item>3次</item>
+        <item>5次</item>
+        <item>7次</item>
+    </string-array>
+</resources>

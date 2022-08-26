@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="font_title" format="dimension" />
+    <attr name="font_label" format="dimension" />
+    <attr name="font_tv_hint" format="dimension" />
+    <attr name="font_et" format="dimension" />
+    <attr name="font_btn" format="dimension" />
+
+</resources>
