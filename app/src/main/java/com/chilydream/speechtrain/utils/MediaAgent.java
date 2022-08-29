@@ -14,6 +14,7 @@ import androidx.core.app.ActivityCompat;
 
 import com.chilydream.speechtrain.R;
 import com.chilydream.speechtrain.train.AudioUnit;
+import com.chilydream.speechtrain.train.TrainOption;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -30,19 +31,12 @@ public class MediaAgent {
     SeekBar mSbVolume;
     int bufferSizeInBytes;
     int trainMode;
-    int audioPlayFlag;  // 0表示没有播放音乐，1表示正在播放音乐
     int recordFlag;     // 0表示没有录制音频，1表示正在录制音频, 2表示发出停止命令但还没停止
     int recordTime;
     File recordFile;
 
     public MediaAgent(Context context) {
         mMediaPlayer = new MediaPlayer();
-        mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mediaPlayer) {
-                audioPlayFlag = 0;
-            }
-        });
         bufferSizeInBytes = AudioRecord.getMinBufferSize(ConfigConsts.RECORD_SAMPLE_RATE,
                 ConfigConsts.RECORD_CHANNEL, ConfigConsts.RECORD_ENCODING) * 2;
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -51,7 +45,7 @@ public class MediaAgent {
         }
         mAudioRecord = new AudioRecord(ConfigConsts.RECORD_SOURCE, ConfigConsts.RECORD_SAMPLE_RATE,
                 ConfigConsts.RECORD_CHANNEL, ConfigConsts.RECORD_ENCODING, bufferSizeInBytes);
-        mSbVolume = ((Activity)context).findViewById(R.id.train_sb_volume);
+        mSbVolume = ((Activity) context).findViewById(R.id.train_sb_volume);
     }
 
     public void prepare(AudioUnit audioUnit) {
@@ -59,13 +53,15 @@ public class MediaAgent {
         try {
             mMediaPlayer.setDataSource(audioUnit.getSaveFile().getAbsolutePath());
             mMediaPlayer.prepare();
-            audioPlayFlag = 0;
             recordFlag = 0;
-            if (trainMode==0) {
-                recordTime = (int) (mMediaPlayer.getDuration()*1.2);
+            if (trainMode == TrainOption.MODE_LAR) {
+                recordTime = (int) (mMediaPlayer.getDuration() * 1.2);
+                // todo: 不再设计单独间隔，而是改成把原音频拉长？
                 // 需要改成从服务器获取吗？
-            } else {
-                recordTime = (int) (mMediaPlayer.getDuration()*1.1);
+            } else if (trainMode == TrainOption.MODE_RSI) {
+                recordTime = (int) (mMediaPlayer.getDuration() * 1.1);
+                // todo: 不再设计单独间隔，而是改成把原音频拉长？
+                // todo: RSI拉长的话应该不是使用倍数，而是增加一定的时间比较好
             }
             recordFile = audioUnit.getRecordFile();
         } catch (IOException e) {
@@ -78,23 +74,17 @@ public class MediaAgent {
     }
 
     public void playAudio() {
-        audioPlayFlag = 1;
         mMediaPlayer.start();
     }
 
-    public void startRecordAudio() {
+    public void startRecord() {
         RecordThread recordThread = new RecordThread();
         recordThread.start();
     }
 
-    public void stopRecordAudio() {
+    public void stopRecord() {
         recordFlag = 2;
     }
-
-    public boolean isPlayingAudio() {
-        return audioPlayFlag==1;
-    }
-
     public int getDuration() {
         return mMediaPlayer.getDuration();
     }
@@ -103,7 +93,7 @@ public class MediaAgent {
         return recordTime;
     }
 
-    class RecordThread extends Thread{
+    class RecordThread extends Thread {
         int bufferReadResult;
         OutputStream outputStream;
         ByteArrayOutputStream byteArrayOutputStream;

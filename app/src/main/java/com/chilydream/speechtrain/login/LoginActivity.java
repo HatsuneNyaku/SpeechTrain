@@ -16,6 +16,7 @@ import android.widget.TextView;
 
 import com.alibaba.fastjson.JSONObject;
 import com.chilydream.speechtrain.R;
+import com.chilydream.speechtrain.train.TrainOption;
 import com.chilydream.speechtrain.train.TrainOptionActivity;
 import com.chilydream.speechtrain.utils.ConfigConsts;
 import com.chilydream.speechtrain.utils.Interaction;
@@ -34,6 +35,7 @@ public class LoginActivity extends AppCompatActivity {
     TextView mTvVersion;
 
     UserMessage userMessage;
+    TrainOption trainOption;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +100,7 @@ public class LoginActivity extends AppCompatActivity {
                 case"mismatch":
                     Interaction.showToast(LoginActivity.this, message);
                 case"success":
+                    trainOption = TrainOption.getTrainOption();
                     if (needQues.equals("1")) {
                         Intent intent = QuestionnaireActivity.newIntent(LoginActivity.this);
                         startActivity(intent);

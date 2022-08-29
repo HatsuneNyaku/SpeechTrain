@@ -18,7 +18,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.chilydream.speechtrain.R;
 import com.chilydream.speechtrain.utils.ConfigConsts;
 import com.chilydream.speechtrain.utils.Interaction;
-import com.chilydream.speechtrain.utils.MediaAgent;
 import com.chilydream.speechtrain.utils.NetConnection;
 import com.chilydream.speechtrain.utils.UserMessage;
 
@@ -90,25 +89,30 @@ public class TrainOptionActivity extends AppCompatActivity {
         mSpGraph.setSelection(trainOption.posGraph);
         mSpRepeat.setSelection(trainOption.posRepeat);
 
+        if (trainOption.availQuantity == TrainOption.OPTION_NOT_AVAIL) {
+            mSpQuantity.setEnabled(false);
+        }
+        if (trainOption.availContent == TrainOption.OPTION_NOT_AVAIL) {
+            mSpContent.setEnabled(false);
+        }
+        if (trainOption.availReadMode == TrainOption.OPTION_NOT_AVAIL) {
+            mSpReadMode.setEnabled(false);
+        }
+        if (trainOption.availReview == TrainOption.OPTION_NOT_AVAIL) {
+            mSpReview.setEnabled(false);
+        }
+        if (trainOption.availGraph == TrainOption.OPTION_NOT_AVAIL) {
+            mSpGraph.setEnabled(false);
+        }
+        if (trainOption.availRepeat == TrainOption.OPTION_NOT_AVAIL) {
+            mSpRepeat.setEnabled(false);
+        }
+
         askRecordPermission(this);
     }
 
     public void optionSubmit(View view) {
         // todo: 上传的时候传 position还是 string？
-//        String strQuantity = mSpQuantity.getSelectedItem().toString();
-//        String strContent = mSpContent.getSelectedItem().toString();
-//        String strReadMode = mSpReadMode.getSelectedItem().toString();
-//        String strReview = mSpReview.getSelectedItem().toString();
-//        String strGraph = mSpGraph.getSelectedItem().toString();
-//        String strRepeat = mSpRepeat.getSelectedItem().toString();
-//
-//        JSONObject trainOptionJson = userMessage.getIdJson();
-//        trainOptionJson.put("quantity", strQuantity);
-//        trainOptionJson.put("content", strContent);
-//        trainOptionJson.put("readMode", strReadMode);
-//        trainOptionJson.put("review", strReview);
-//        trainOptionJson.put("graph", strGraph);
-//        trainOptionJson.put("repeat", strRepeat);
 
         int posQuantity = mSpQuantity.getSelectedItemPosition();
         int posContent = mSpContent.getSelectedItemPosition();
@@ -120,7 +124,7 @@ public class TrainOptionActivity extends AppCompatActivity {
         JSONObject trainOptionJson = UserMessage.getIdJson();
         trainOptionJson.put("quantity", posQuantity);
         trainOptionJson.put("content", posContent);
-        trainOptionJson.put("readMode", posReadMode);
+        trainOptionJson.put("read_mode", posReadMode);
         trainOptionJson.put("review", posReview);
         trainOptionJson.put("graph", posGraph);
         trainOptionJson.put("repeat", posRepeat);

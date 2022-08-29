@@ -76,6 +76,10 @@ public class AudioUnit {
         return finishStatus.equals("finished");
     }
 
+    public void setFinished() {
+        finishStatus = "finished";
+    }
+
     public File getRecordFile() {
         UserMessage userMessage = UserMessage.getUserMessage();
         Date cur_time = new Date();
