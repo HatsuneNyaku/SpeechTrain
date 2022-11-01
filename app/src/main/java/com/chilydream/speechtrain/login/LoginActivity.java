@@ -42,10 +42,30 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // 所有全局不变的、和 context相关的系统信息都应该在这里更新到 SystemMessage类中
-        SystemMessage.rootDir = this.getFilesDir();
+//        SystemMessage.rootDir = this.getFilesDir();
+        SystemMessage.rootDir = this.getExternalFilesDir("");
         SystemMessage.trainAudioDir = new File(SystemMessage.rootDir, "train_audio");
         SystemMessage.recordDir = new File(SystemMessage.rootDir, "record_audio");
         SystemMessage.imgDir = new File(SystemMessage.rootDir, "img");
+        Log.d(TAG, "onCreate: "+SystemMessage.imgDir);
+        if (!SystemMessage.trainAudioDir.exists()) {
+            boolean mkdir_flag = SystemMessage.trainAudioDir.mkdirs();
+            if (!mkdir_flag) {
+                Interaction.showToast(this, "创建音频文件夹失败");
+            }
+        }
+        if (!SystemMessage.recordDir.exists()) {
+            boolean mkdir_flag = SystemMessage.recordDir.mkdirs();
+            if (!mkdir_flag) {
+                Interaction.showToast(this, "创建录音文件夹失败");
+            }
+        }
+        if (!SystemMessage.imgDir.exists()) {
+            boolean mkdir_flag = SystemMessage.imgDir.mkdirs();
+            if (!mkdir_flag) {
+                Interaction.showToast(this, "创建图像文件夹失败");
+            }
+        }
 
         mEtAccount = findViewById(R.id.login_et_account);
         mEtPassword = findViewById(R.id.login_et_pwd);
@@ -81,30 +101,25 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         public void run() {
             JSONObject idJson = UserMessage.getIdJson();
-
-            Intent tmp = TrainOptionActivity.newIntent(LoginActivity.this);
-            startActivity(tmp);
-            if (true) return;
+            Log.d(TAG, "run: id json:"+idJson.toString());
 
             NetConnection netConnection = new NetConnection(ConfigConsts.API_LOGIN);
             netConnection.postJson(idJson);
             JSONObject resultJson = netConnection.getJsonResult();
-            String status = resultJson.getString("status");
-            String message = resultJson.getString("message");
-            String needQues = resultJson.getString("needQues");
-            Log.d(TAG, "status:"+status);
-            Log.d(TAG, "message:"+message);
-            Log.d(TAG, "needQues:"+needQues);
+            String auth_result = resultJson.getString("auth_result");
+            String ques_result = resultJson.getString("ques_result");
+            Log.d(TAG, "auth_result:"+auth_result);
+            Log.d(TAG, "ques_result:"+ques_result);
 
-            switch (status) {
-                case"mismatch":
-                    Interaction.showToast(LoginActivity.this, message);
-                case"success":
+            switch (auth_result) {
+                case ConfigConsts.RESULT_AUTH_FAIL:
+                    Interaction.showToast(LoginActivity.this, "账号或密码错误");
+                case ConfigConsts.RESULT_AUTH_SUCCESS:
                     trainOption = TrainOption.getTrainOption();
-                    if (needQues.equals("1")) {
+                    if (ques_result.equals(ConfigConsts.RESULT_QUES_NOT_EXIST)) {
                         Intent intent = QuestionnaireActivity.newIntent(LoginActivity.this);
                         startActivity(intent);
-                    } else {
+                    } else if (ques_result.equals(ConfigConsts.RESULT_QUES_EXIST)){
                         Intent intent = TrainOptionActivity.newIntent(LoginActivity.this);
                         startActivity(intent);
                     }
@@ -134,5 +149,36 @@ public class LoginActivity extends AppCompatActivity {
 
         Thread thread = new Thread(new LoginCheck());
         thread.start();
+
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//
+//                JSONObject idJson = UserMessage.getIdJson();
+//                Log.d(TAG, "run: id json:"+idJson.toString());
+//
+//                NetConnection netConnection = new NetConnection(ConfigConsts.API_LOGIN);
+//                netConnection.postJson(idJson);
+//                JSONObject resultJson = netConnection.getJsonResult();
+//                String auth_result = resultJson.getString("auth_result");
+//                String ques_result = resultJson.getString("ques_result");
+//                Log.d(TAG, "auth_result:"+auth_result);
+//                Log.d(TAG, "ques_result:"+ques_result);
+//
+//                switch (auth_result) {
+//                    case ConfigConsts.RESULT_AUTH_FAIL:
+//                        Interaction.showToast(LoginActivity.this, "账号或密码错误");
+//                    case ConfigConsts.RESULT_AUTH_SUCCESS:
+//                        trainOption = TrainOption.getTrainOption();
+//                        if (ques_result.equals(ConfigConsts.RESULT_QUES_NOT_EXIST)) {
+//                            Intent intent = QuestionnaireActivity.newIntent(LoginActivity.this);
+//                            startActivity(intent);
+//                        } else if (ques_result.equals(ConfigConsts.RESULT_QUES_EXIST)){
+//                            Intent intent = TrainOptionActivity.newIntent(LoginActivity.this);
+//                            startActivity(intent);
+//                        }
+//                }
+//            }
+//        }).start();
     }
 }

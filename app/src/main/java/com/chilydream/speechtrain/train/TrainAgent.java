@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 
 import com.chilydream.speechtrain.utils.UploadThread;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -24,7 +25,7 @@ public class TrainAgent extends BasicAgent {
 //    SeekBar mSbProgress;
 //    SeekBar mSbVolume;
 //    TextView mTvSentenceId;
-//    TextView mTvSentenceContent;
+//    TextView mTvSentenceCorpusLabel;
 //    ImageView mImgPitch;
 //    Button mBtnNext;
 //    MediaAgent mMediaAgent;
@@ -48,7 +49,7 @@ public class TrainAgent extends BasicAgent {
         super(context);
 //        parentContext = context;
 //        mTvSentenceId = ((Activity) context).findViewById(R.id.train_tv_sentence_id);
-//        mTvSentenceContent = ((Activity) context).findViewById(R.id.train_tv_sentence);
+//        mTvSentenceCorpusLabel = ((Activity) context).findViewById(R.id.train_tv_sentence);
 //        mImgPitch = ((Activity) context).findViewById(R.id.train_graph_img_pitch);
 //        mBtnNext = ((Activity) context).findViewById(R.id.train_btn_next);
 //        mSbProgress = ((Activity) context).findViewById(R.id.train_sb_progress);
@@ -76,7 +77,7 @@ public class TrainAgent extends BasicAgent {
 //        mMediaAgent = new MediaAgent(context);
 //        mAssetMng = context.getAssets();
 //        trainOption = TrainOption.getTrainOption();
-//        mMediaAgent.setMode(trainOption.posReadMode);
+//        mMediaAgent.setMode(trainOption.posTrainType);
 
 //        centerHandler = new CenterHandler(this);
 //        progHandler = new ProgressUpdateHandler(this);
@@ -84,7 +85,7 @@ public class TrainAgent extends BasicAgent {
 //        uploadThread.start();
 //        uploadHandler = ((UploadThread)uploadThread).getUploadHandler();
 
-        switch (trainOption.posReadMode) {
+        switch (trainOption.posTrainType) {
             case TrainOption.MODE_LAR:
                 singleTrainHandler = new LARHandler(this);
                 break;
@@ -96,7 +97,7 @@ public class TrainAgent extends BasicAgent {
                 break;
         }
 
-        switch (trainOption.posRepeat) {
+        switch (trainOption.posRepeat_0) {
             case 0:
                 repeatNum = 3;
                 break;
@@ -131,14 +132,13 @@ public class TrainAgent extends BasicAgent {
                 agent.mTvSentenceId.setText(
                         String.format(
                                 agent.templateSentenceId,
-                                audioList.getFinishedNumber(), audioList.getAudioNumber()
+                                audioList.getFinishedNumber()+1, audioList.getAudioNumber()
                         )
                 );
-                agent.mTvSentenceContent.setText(unit.sentenceContent);
+                agent.mTvSentenceCorpusLabel.setText(unit.sentenceCorpusLabel);
                 if (TrainOption.ifShowGraph()) {
                     try {
-                        InputStream inputStream =
-                                agent.mAssetMng.open(unit.getImgFile().getAbsolutePath());
+                        InputStream inputStream = new FileInputStream(unit.getImgSaveFile());
                         Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
                         agent.mImgPitch.setImageBitmap(bitmap);
                     } catch (IOException e) {
@@ -155,30 +155,30 @@ public class TrainAgent extends BasicAgent {
                 Handler uploadHandler = agent.uploadHandler;
 
                 unit.setFinished();
-                Message message = uploadHandler.obtainMessage();
-                message.what = UploadThread.COMMAND_UPLOAD;
-                message.obj = unit;
-                uploadHandler.sendMessage(message);
+//                Message message = uploadHandler.obtainMessage();
+//                message.what = UploadThread.COMMAND_UPLOAD;
+//                message.obj = unit;
+//                uploadHandler.sendMessage(message);
 
                 audioList.nextCursor();
 
                 if (audioList.isAllFinished()) {
-                    agent.mTvSentenceContent.setText("训练结束，正在上传录音，请不要关闭应用");
+                    agent.mTvSentenceCorpusLabel.setText("训练结束，正在上传录音，请不要关闭应用");
                     uploadHandler.sendEmptyMessage(UploadThread.COMMAND_FINISH_TRAIN);
                 } else {
                     agent.mBtnNext.setClickable(true);
                 }
             } else if (msg.what == STAGE_ALL_FINISH) {
                 agent.exitBuilder.create().show();
-                agent.mTvSentenceContent.setText("录音已上传完毕\n点击此处即可退出");
-                agent.mTvSentenceContent.setOnClickListener(v -> {
+                agent.mTvSentenceCorpusLabel.setText("录音已上传完毕\n点击此处即可退出");
+                agent.mTvSentenceCorpusLabel.setOnClickListener(v -> {
                     ActivityManager activityManager = (ActivityManager) agent.parentContext.getSystemService(Context.ACTIVITY_SERVICE);
                     List<ActivityManager.AppTask> appTaskList = activityManager.getAppTasks();
                     for (ActivityManager.AppTask appTask : appTaskList) {
                         appTask.finishAndRemoveTask();
                     }
                 });
-                agent.mTvSentenceContent.setClickable(true);
+                agent.mTvSentenceCorpusLabel.setClickable(true);
 
                 agent.mBtnNext.setText("退出");
                 agent.mBtnNext.setOnClickListener(view -> {
@@ -216,6 +216,7 @@ public class TrainAgent extends BasicAgent {
 
             train_count += 1;
             if (train_count <= repeat_num) {
+                // todo：更新 unit的 cnt
                 if (msg.what == STAGE_PLAY) {
                     time_length = agent.mMediaAgent.getDuration();
                     bar.setMax(time_length);

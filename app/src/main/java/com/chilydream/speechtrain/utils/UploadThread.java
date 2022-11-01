@@ -55,8 +55,8 @@ public class UploadThread extends Thread{
                 upload_count += 1;
 
                 NetConnection netConnection = new NetConnection(ConfigConsts.API_UPLOAD);
-                AudioUnit unit = (AudioUnit) msg.obj;
-                File record_file = unit.getRecordFile();
+                File record_file = (File) msg.obj;
+                // todo：lar时多个音频上传
                 InputStream input_stream;
                 byte[] byte_wav;
 
@@ -71,14 +71,28 @@ public class UploadThread extends Thread{
                 }
 
                 upload_count -= 1;
+                Log.d(TAG, "handleMessage: 当前upload_count="+upload_count);
+                Log.d(TAG, "handleMessage: 当前finish_train="+finish_train);
                 if (upload_count==0 && finish_train) {
+                    JSONObject idJson = UserMessage.getIdJson();
+                    NetConnection finishConnection = new NetConnection(ConfigConsts.API_FINISH);
+                    finishConnection.postJson(idJson);
+                    JSONObject resultJson = netConnection.getJsonResult();
+
                     BasicAgent agent = weakReference.get();
                     agent.centerHandler.sendEmptyMessage(CenterHandler.STAGE_ALL_FINISH);
                 }
                 // todo: 这里是否需要判断有无上传成功？
             } else if (msg.what==COMMAND_FINISH_TRAIN) {
                 finish_train = true;
+                Log.d(TAG, "handleMessage: 当前upload_count="+upload_count);
+                Log.d(TAG, "handleMessage: 当前finish_train="+finish_train);
                 if (upload_count==0) {
+                    JSONObject idJson = UserMessage.getIdJson();
+                    NetConnection finishConnection = new NetConnection(ConfigConsts.API_FINISH);
+                    finishConnection.postJson(idJson);
+                    JSONObject resultJson = finishConnection.getJsonResult();
+
                     BasicAgent agent = weakReference.get();
                     agent.centerHandler.sendEmptyMessage(CenterHandler.STAGE_ALL_FINISH);
                 }
@@ -91,12 +105,9 @@ public class UploadThread extends Thread{
         super.run();
         Looper.prepare();
         uploadHandler = new UploadHandler(agentWeakReference.get());
-        // todo: Handler是必须要在两个loop命令中间定义才起作用吗
+        BasicAgent agent = agentWeakReference.get();
+        agent.uploadHandler = uploadHandler;
         Looper.loop();
         Log.d(TAG, "run: upload thread run finish.");
-    }
-
-    public Handler getUploadHandler() {
-        return uploadHandler;
     }
 }

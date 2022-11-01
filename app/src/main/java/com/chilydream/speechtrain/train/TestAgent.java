@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 
 import com.chilydream.speechtrain.utils.UploadThread;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -26,6 +27,7 @@ public class TestAgent extends BasicAgent {
     public TestAgent(Context context) {
         super(context);
         mBtnNext.setOnClickListener(view -> {
+            Log.d(TAG, "TestAgent: 按钮被点击了");
             mBtnNext.setClickable(false);
             if (!audioList.isAllFinished()) {
                 centerHandler.sendEmptyMessage(TestCenterHandler.STAGE_START);
@@ -50,18 +52,18 @@ public class TestAgent extends BasicAgent {
             AudioUnit unit = audioList.getCurrentUnit();
 
             if (msg.what == STAGE_START) {
+                agent.mBtnNext.setClickable(false);
                 // 负责更新界面，并开始录制音频
                 agent.mTvSentenceId.setText(
                         String.format(
                                 agent.templateSentenceId,
-                                audioList.getFinishedNumber(), audioList.getAudioNumber()
+                                audioList.getFinishedNumber()+1, audioList.getAudioNumber()
                         )
                 );
-                agent.mTvSentenceContent.setText(unit.sentenceContent);
+                agent.mTvSentenceCorpusLabel.setText(unit.sentenceCorpusLabel);
                 if (TrainOption.ifShowGraph()) {
                     try {
-                        InputStream inputStream =
-                                agent.mAssetMng.open(unit.getImgFile().getAbsolutePath());
+                        InputStream inputStream = new FileInputStream(unit.getImgSaveFile());
                         Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
                         agent.mImgPitch.setImageBitmap(bitmap);
                     } catch (IOException e) {
@@ -71,38 +73,30 @@ public class TestAgent extends BasicAgent {
 
                 agent.mMediaAgent.prepare(unit);
                 agent.singleTestHandler.sendEmptyMessage(SingleTestHandler.STAGE_TEST);
-                // RSIHandler不关注 msg.what
-                // LARHandler则需要输入 STAGE_PLAY进行启动
-
             } else if (msg.what == STAGE_NEXT) {
                 // 负责将文件加入上传列表，并更新指针
-                Handler uploadHandler = agent.uploadHandler;
-
                 unit.setFinished();
-                Message message = uploadHandler.obtainMessage();
-                message.what = UploadThread.COMMAND_UPLOAD;
-                message.obj = unit;
-                uploadHandler.sendMessage(message);
-
                 audioList.nextCursor();
 
                 if (audioList.isAllFinished()) {
-                    agent.mTvSentenceContent.setText("训练结束，正在上传录音，请不要关闭应用");
+                    agent.mTvSentenceCorpusLabel.setText("训练结束，正在上传录音，请不要关闭应用");
+                    Handler uploadHandler = agent.uploadHandler;
                     uploadHandler.sendEmptyMessage(UploadThread.COMMAND_FINISH_TRAIN);
                 } else {
                     agent.mBtnNext.setClickable(true);
                 }
+                Log.d(TAG, "handleMessage: 成功收尾，准备进入下一句");
             } else if (msg.what == STAGE_ALL_FINISH) {
                 agent.exitBuilder.create().show();
-                agent.mTvSentenceContent.setText("录音已上传完毕\n点击此处即可退出");
-                agent.mTvSentenceContent.setOnClickListener(v -> {
+                agent.mTvSentenceCorpusLabel.setText("录音已上传完毕\n点击此处即可退出");
+                agent.mTvSentenceCorpusLabel.setOnClickListener(v -> {
                     ActivityManager activityManager = (ActivityManager) agent.parentContext.getSystemService(Context.ACTIVITY_SERVICE);
                     List<ActivityManager.AppTask> appTaskList = activityManager.getAppTasks();
                     for (ActivityManager.AppTask appTask : appTaskList) {
                         appTask.finishAndRemoveTask();
                     }
                 });
-                agent.mTvSentenceContent.setClickable(true);
+                agent.mTvSentenceCorpusLabel.setClickable(true);
 
                 agent.mBtnNext.setText("退出");
                 agent.mBtnNext.setOnClickListener(view -> {
@@ -148,10 +142,13 @@ public class TestAgent extends BasicAgent {
     private static class ProgressUpdateThread extends Thread {
         private final WeakReference<TestAgent> weakReference;
         long start_time, time_length;
+        boolean finish_flag;
 
         ProgressUpdateThread(TestAgent agent, int time_length) {
             weakReference = new WeakReference<>(agent);
             this.time_length = time_length;
+            Log.d(TAG, "ProgressUpdateThread: "+time_length);
+            finish_flag = false;
         }
 
         @Override
@@ -176,10 +173,17 @@ public class TestAgent extends BasicAgent {
                 progHandler.removeCallbacks(agent.progThread);
 
                 agent.mMediaAgent.stopRecord();
-                agent.singleTestHandler.sendEmptyMessage(SingleTestHandler.STAGE_FINISH);
+                if (!finish_flag) {
+                    agent.singleTestHandler.sendEmptyMessage(SingleTestHandler.STAGE_FINISH);
+                    finish_flag = true;
+                }
             } else {
                 message.arg1 = (int) (cur_time - start_time);
-                // todo: 这里需要加入睡眠来减少资源消耗吗？例如改成过 10ms更新一次进度条
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 progHandler.sendMessage(message);
             }
         }

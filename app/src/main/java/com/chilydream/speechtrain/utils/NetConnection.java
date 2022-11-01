@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -41,9 +42,6 @@ public class NetConnection {
             mHttpURLConnection = (HttpURLConnection) mURL.openConnection();
             mHttpURLConnection.setReadTimeout(5000);
             mHttpURLConnection.setConnectTimeout(5000);
-            mHttpURLConnection.setDoOutput(true);
-            mHttpURLConnection.setDoInput(true);
-            mHttpURLConnection.setUseCaches(false);
         } catch (IOException e) {
             Log.e(TAG, e.toString());
             throw new RuntimeException();
@@ -61,6 +59,9 @@ public class NetConnection {
         try {
             mHttpURLConnection.setRequestMethod("POST");
             mHttpURLConnection.setRequestProperty("Content-Type", "application/json");
+            mHttpURLConnection.setRequestProperty("connection", "keep-alive");
+            mHttpURLConnection.setDoInput(true);
+            mHttpURLConnection.setDoOutput(true);
             mHttpURLConnection.connect();
 
             OutputStream outputStream = mHttpURLConnection.getOutputStream();
@@ -111,7 +112,7 @@ public class NetConnection {
                     .append("\"")
                     .append(newLine);
             sb.append("Content-Type:application/octet-stream");
-            // sb.append("Content-Type:audio/mpeg");
+            // sb.append("CorpusLabel-Type:audio/mpeg");
             sb.append("Content-Transfer-Encoding: binary");
             // 参数头设置完以后需要两个换行，然后才是参数内容
             sb.append(newLine);
@@ -142,31 +143,6 @@ public class NetConnection {
         }
     }
 
-    public String getStrResult() {
-        if (!connectionFlag) {
-            Log.e(TAG, "Connection is not built.");
-            throw new RuntimeException();
-        } else {
-            connectionFlag = false;
-        }
-        String lines;
-        StringBuilder stringBuilder = new StringBuilder();
-        BufferedReader bufferedReader;
-        try {
-            bufferedReader = new BufferedReader(
-                    new InputStreamReader(mHttpURLConnection.getInputStream()));
-            while ((lines = bufferedReader.readLine()) != null) {
-                lines = new String(lines.getBytes(), StandardCharsets.UTF_8);
-                stringBuilder.append(lines);
-            }
-            bufferedReader.close();
-            mHttpURLConnection.disconnect();
-            return stringBuilder.toString();
-        } catch (IOException e) {
-            Log.e(TAG, e.toString());
-            throw new RuntimeException();
-        }
-    }
 
     public JSONObject getJsonResult() {
         if (!connectionFlag) {

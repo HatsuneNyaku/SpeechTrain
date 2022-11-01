@@ -6,7 +6,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioRecord;
 import android.media.MediaPlayer;
-import android.os.Build;
+import android.os.Message;
 import android.util.Log;
 import android.widget.SeekBar;
 
@@ -14,14 +14,15 @@ import androidx.core.app.ActivityCompat;
 
 import com.chilydream.speechtrain.R;
 import com.chilydream.speechtrain.train.AudioUnit;
+import com.chilydream.speechtrain.train.BasicAgent;
 import com.chilydream.speechtrain.train.TrainOption;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 
 public class MediaAgent {
     private final String TAG = "MediaAgent";
@@ -30,13 +31,16 @@ public class MediaAgent {
     AudioRecord mAudioRecord;
     SeekBar mSbVolume;
     int bufferSizeInBytes;
-    int trainMode;
+    int trainType;
     int recordFlag;     // 0表示没有录制音频，1表示正在录制音频, 2表示发出停止命令但还没停止
     int recordTime;
     File recordFile;
 
-    public MediaAgent(Context context) {
+    WeakReference<BasicAgent> agentWeakReference;
+
+    public MediaAgent(Context context, BasicAgent agent) {
         mMediaPlayer = new MediaPlayer();
+        agentWeakReference = new WeakReference<>(agent);
         bufferSizeInBytes = AudioRecord.getMinBufferSize(ConfigConsts.RECORD_SAMPLE_RATE,
                 ConfigConsts.RECORD_CHANNEL, ConfigConsts.RECORD_ENCODING) * 2;
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -53,24 +57,28 @@ public class MediaAgent {
         try {
             mMediaPlayer.setDataSource(audioUnit.getSaveFile().getAbsolutePath());
             mMediaPlayer.prepare();
+            Log.d(TAG, "prepare: "+mMediaPlayer.getDuration());
             recordFlag = 0;
-            if (trainMode == TrainOption.MODE_LAR) {
+            if (trainType == TrainOption.MODE_LAR) {
                 recordTime = (int) (mMediaPlayer.getDuration() * 1.2);
                 // todo: 不再设计单独间隔，而是改成把原音频拉长？
                 // 需要改成从服务器获取吗？
-            } else if (trainMode == TrainOption.MODE_RSI) {
+            } else if (trainType == TrainOption.MODE_RSI) {
                 recordTime = (int) (mMediaPlayer.getDuration() * 1.1);
                 // todo: 不再设计单独间隔，而是改成把原音频拉长？
                 // todo: RSI拉长的话应该不是使用倍数，而是增加一定的时间比较好
+            } else if (trainType == TrainOption.MODE_TEST) {
+                recordTime = (int) (mMediaPlayer.getDuration() * 1.1);
             }
+            Log.d(TAG, "prepare: recordTime:"+recordTime);
             recordFile = audioUnit.getRecordFile();
         } catch (IOException e) {
             Log.e(TAG, e.toString());
         }
     }
 
-    public void setMode(int readMode) {
-        trainMode = readMode;
+    public void setTrainType(int train_type) {
+        trainType = train_type;
     }
 
     public void playAudio() {
@@ -137,6 +145,13 @@ public class MediaAgent {
                         Log.e(TAG, e.toString());
                     }
                 }
+                BasicAgent agent = agentWeakReference.get();
+
+                Message message = agent.uploadHandler.obtainMessage();
+                message.what = UploadThread.COMMAND_UPLOAD;
+                message.obj = recordFile;
+                agent.uploadHandler.sendMessage(message);
+
             }
             recordFlag = 0;
         }

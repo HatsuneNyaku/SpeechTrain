@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="64sp"
+    android:paddingVertical="64sp"
+    android:paddingHorizontal="8sp"
     android:gravity="top"
     tools:context=".login.QuestionnaireActivity">
     <!--    todo: 怎么布局才能让界面在各种分辨率下都适配？ -->

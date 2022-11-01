@@ -70,7 +70,7 @@ public class QuestionnaireActivity extends AppCompatActivity {
 
         JSONObject infoJson = UserMessage.getIdJson();
         infoJson.put("name", name);
-        infoJson.put("tele", tele);
+        infoJson.put("telephone", tele);
         infoJson.put("weixin", weixin);
         Thread thread = new Thread(new QuestionnaireActivity.InfoSubmit(infoJson));
         thread.start();

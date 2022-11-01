@@ -27,7 +27,7 @@ public class BasicAgent {
     SeekBar mSbProgress;
     SeekBar mSbVolume;
     TextView mTvSentenceId;
-    TextView mTvSentenceContent;
+    TextView mTvSentenceCorpusLabel;
     ImageView mImgPitch;
     Button mBtnNext;
     MediaAgent mMediaAgent;
@@ -40,7 +40,7 @@ public class BasicAgent {
     int repeatNum;
 
     public Handler centerHandler;
-    Handler uploadHandler;
+    public Handler uploadHandler;
     Handler progHandler;
     Thread uploadThread;
     Thread progThread;
@@ -48,7 +48,7 @@ public class BasicAgent {
     BasicAgent(Context context) {
         parentContext = context;
         mTvSentenceId = ((Activity) context).findViewById(R.id.train_tv_sentence_id);
-        mTvSentenceContent = ((Activity) context).findViewById(R.id.train_tv_sentence);
+        mTvSentenceCorpusLabel = ((Activity) context).findViewById(R.id.train_tv_sentence);
         mImgPitch = ((Activity) context).findViewById(R.id.train_graph_img_pitch);
         mBtnNext = ((Activity) context).findViewById(R.id.train_btn_next);
         mBtnNext.setClickable(false);
@@ -67,15 +67,16 @@ public class BasicAgent {
                 });
 
         templateSentenceId = context.getResources().getString(R.string.train_finished_all_number);
-        mMediaAgent = new MediaAgent(context);
+        mMediaAgent = new MediaAgent(context, this);
         mAssetMng = context.getAssets();
         trainOption = TrainOption.getTrainOption();
-        mMediaAgent.setMode(trainOption.posReadMode);
+        mMediaAgent.setTrainType(trainOption.flag_train_type);
 
         progHandler = new ProgressUpdateHandler(this);
         uploadThread = new UploadThread(this);
         uploadThread.start();
-        uploadHandler = ((UploadThread)uploadThread).getUploadHandler();
+//        uploadHandler = ((UploadThread)uploadThread).getUploadHandler();
+        // todo: 现在把获取放到了子线程中
     }
 
     private static class ProgressUpdateHandler extends Handler {

@@ -19,6 +19,7 @@ public class TrainMainActivity extends AppCompatActivity {
 
     public static Intent newIntent(Context context) {
         Intent intent = new Intent(context, TrainMainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         return intent;
     }
 
@@ -30,6 +31,10 @@ public class TrainMainActivity extends AppCompatActivity {
         } else {
             setContentView(R.layout.activity_train_nograph);
         }
+
+        audioList = AudioList.getAudioList();
+
+        mTvSection = findViewById(R.id.train_tv_section_name);
         mTvSection.setText(audioList.getSectionName());
         trainOption = TrainOption.getTrainOption();
 

@@ -1,5 +1,7 @@
 package com.chilydream.speechtrain.train;
 
+import android.util.Log;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.chilydream.speechtrain.utils.DownloadThread;
@@ -8,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AudioList {
+    private static final String TAG = "AudioListTag";
     static AudioList sAudioList = null;
     int audioNumber;
     int finishedNumber;
@@ -21,34 +24,24 @@ public class AudioList {
     }
 
     public static void initAudioList(JSONObject dataJson) {
-        String audio_list_str = dataJson.getString("audio_list");
-
         sAudioList = new AudioList();
         sAudioList.sectionName = dataJson.getString("section_name");
 
         JSONObject unit_json;
-        JSONObject audio_list_json = JSON.parseObject(audio_list_str);
-        String download_id, sentence_content, file_size, finish_status, img_download_id, img_file_size;
+        List<String> audioStrList = JSON.parseArray(dataJson.getString("audio_list"), String.class);
+        String corpus_id, sentence_content, file_size, finish_status;
 
-        sAudioList.audioNumber = Integer.parseInt(audio_list_json.getString("audio_number"));
+        sAudioList.audioNumber = Integer.parseInt(dataJson.getString("corpus_number"));
         for (int i = 0; i < sAudioList.audioNumber; i += 1) {
-            unit_json = JSON.parseObject(audio_list_json.getString("" + i));
-            download_id = unit_json.getString("download_id");
-            sentence_content = unit_json.getString("sentence_content");
+            unit_json = JSON.parseObject(audioStrList.get(i));
+            corpus_id = unit_json.getString("corpus_id");
+            sentence_content = unit_json.getString("content_text");
             file_size = unit_json.getString("file_size");
             finish_status = unit_json.getString("finish_status");
-            if (unit_json.containsKey("img_download_id")) {
-                img_download_id = unit_json.getString("img_download_id");
-                img_file_size = unit_json.getString("img_file_size");
-                sAudioList.unitList.add(
-                        new AudioUnit(download_id, sentence_content, file_size,
-                                finish_status, img_download_id, img_file_size)
-                );
-            } else {
-                sAudioList.unitList.add(
-                        new AudioUnit(download_id, sentence_content, file_size, finish_status)
-                );
-            }
+            sAudioList.unitList.add(
+                    new AudioUnit(corpus_id, sentence_content, file_size, finish_status)
+            );
+
 
             if (finish_status.equals("finished")) {
                 sAudioList.finishedNumber += 1;
@@ -69,7 +62,8 @@ public class AudioList {
     }
 
     public void nextCursor() {
-        finishedNumber = 0;
+        sAudioList.finishedNumber = 0;
+        sAudioList.trainCursor = 0;
         for (AudioUnit unit : sAudioList.getUnitList()) {
             if (unit.isFinished()) {
                 sAudioList.trainCursor += 1;
@@ -88,6 +82,7 @@ public class AudioList {
     }
 
     public boolean isAllFinished() {
+        Log.d(TAG, "isAllFinished: 现在trainCursor是"+trainCursor);
         return trainCursor==audioNumber;
     }
 
@@ -101,5 +96,10 @@ public class AudioList {
 
     public String getSectionName() {
         return sectionName;
+    }
+
+    public static boolean isPrepare() {
+        AudioUnit unit = sAudioList.getCurrentUnit();
+        return unit.isDownload();
     }
 }

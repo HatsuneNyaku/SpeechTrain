@@ -15,12 +15,13 @@
     <string name="ques_btn_submit">提交</string>
 
     <string name="option_btn_confirm">确认</string>
-    <string name="option_tv_repeat">重复次数：</string>
+    <string name="option_tv_repeat_0">循环次数：</string>
+    <string name="option_tv_repeat_1">重复次数：</string>
     <string name="option_tv_graph">语料曲线：</string>
     <string name="option_tv_review">复习占比：</string>
-    <string name="option_tv_read_mode">模仿方式：</string>
-    <string name="option_tv_content">训练内容：</string>
-    <string name="option_tv_quantity">训练量：</string>
+    <string name="option_tv_trian_type">模仿方式：</string>
+    <string name="option_tv_corpus_label">训练内容：</string>
+    <string name="option_tv_corpus_number">训练量：</string>
     <string name="option_tv_title">训练模式选择</string>
 
     <string name="train_default_section_name">Section 1</string>

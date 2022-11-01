@@ -18,6 +18,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SpeechTrain"
         android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="m">
         <activity
             android:name=".train.TrainMainActivity"
