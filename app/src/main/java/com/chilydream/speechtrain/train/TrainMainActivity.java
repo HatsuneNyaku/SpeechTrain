@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.chilydream.speechtrain.R;
@@ -14,6 +15,7 @@ public class TrainMainActivity extends AppCompatActivity {
     TextView mTvSection;
     AudioList audioList;
     TrainOption trainOption;
+    SeekBar mSbProg;
 
     BasicAgent agent;
 
@@ -43,6 +45,12 @@ public class TrainMainActivity extends AppCompatActivity {
         } else if (trainOption.trainOrTest == TrainOption.MODE_TEST) {
             agent = new TestAgent(this);
         }
+
+        mSbProg = findViewById(R.id.train_sb_progress);
+//        mSbProg.setEnabled(false);
+        // todo: 这里可以设置进度条禁止拖动
+        mSbProg.setClickable(false);
+        mSbProg.setFocusable(false);
     }
 
     @Override

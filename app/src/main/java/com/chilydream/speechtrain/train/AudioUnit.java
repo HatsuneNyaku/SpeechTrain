@@ -1,5 +1,7 @@
 package com.chilydream.speechtrain.train;
 
+import android.util.Log;
+
 import com.chilydream.speechtrain.utils.SystemMessage;
 import com.chilydream.speechtrain.utils.UserMessage;
 
@@ -11,6 +13,7 @@ import java.util.Locale;
 import java.util.Map;
 
 public class AudioUnit {
+    private static final String TAG = "AudioUnitTag";
     String corpus_id;
     String sentenceCorpusLabel;
     Long fileSize;
@@ -30,6 +33,7 @@ public class AudioUnit {
       this.sentenceCorpusLabel = sentenceCorpusLabel;
       this.fileSize = Long.parseLong(fileSize);
       this.finishStatus = finishStatus;
+      Log.d(TAG, "AudioUnit: cid:"+corpus_id+"  fs:"+isFinished());
       cnt_2_recordFile = new HashMap<>();
       cur_cnt = 0;
 
@@ -49,20 +53,12 @@ public class AudioUnit {
         return saveFile;
     }
 
-    public Long getFileSize() {
-        return fileSize;
-    }
-
     public boolean isFinished() {
         return finishStatus.equals("finished");
     }
 
     public void setFinished() {
         finishStatus = "finished";
-    }
-
-    public void addCnt() {
-        cur_cnt += 1;
     }
 
     public File getRecordFile() {

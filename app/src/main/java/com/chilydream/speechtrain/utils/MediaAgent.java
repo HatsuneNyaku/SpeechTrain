@@ -86,6 +86,9 @@ public class MediaAgent {
     }
 
     public void startRecord() {
+        BasicAgent agent = agentWeakReference.get();
+        ((UploadThread.UploadHandler) agent.uploadHandler).add_upload_count();
+        Log.d(TAG, "startRecord: 开始录制");
         RecordThread recordThread = new RecordThread();
         recordThread.start();
     }

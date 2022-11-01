@@ -43,11 +43,13 @@ public class TrainOption {
     List<String> listRepeat_1;
     int trainOrTest;
     int flag_train_type;
+    int num_repeat_1;
     UserMessage userMessage;
 
     long timeGap;
 
     private TrainOption() {
+        Log.d(TAG, "TrainOption: 初始化TrainOption");
         userMessage = UserMessage.getUserMessage();
 
         JSONObject idJson = UserMessage.getIdJson();
@@ -88,9 +90,14 @@ public class TrainOption {
         } else if (listTrainType.get(posTrainType-1).equalsIgnoreCase("test")) {
             flag_train_type = TrainOption.MODE_TEST;
         }
+        num_repeat_1 = Integer.parseInt(listRepeat_1.get(posRepeat_1-1));
         // todo: 连接失败怎么办
 
         timeGap = 1000;
+    }
+
+    public static void initTrainOption() {
+        sTrainOption = new TrainOption();
     }
 
     public static TrainOption getTrainOption() {
@@ -109,12 +116,20 @@ public class TrainOption {
         posGraph = (int) jsonObject.get("pos_graph_show");
         posRepeat_0 = (int) jsonObject.get("pos_repeat_0");
         posRepeat_1 = (int) jsonObject.get("pos_repeat_1");
+
+        if (listTrainType.get(posTrainType-1).equalsIgnoreCase("rsi")) {
+            flag_train_type = TrainOption.MODE_RSI;
+        } else if (listTrainType.get(posTrainType-1).equalsIgnoreCase("lar")) {
+            flag_train_type = TrainOption.MODE_LAR;
+        } else if (listTrainType.get(posTrainType-1).equalsIgnoreCase("test")) {
+            flag_train_type = TrainOption.MODE_TEST;
+        }
+        num_repeat_1 = Integer.parseInt(listRepeat_1.get(posRepeat_1-1));
     }
 
     public static boolean ifShowGraph() {
         // posGraph=2, 不显示图像，等价于 selection=1
         // posGraph=1, 显示图像，  等价于 selection=0
-        Log.d(TAG, "ifShowGraph: "+(sTrainOption.posGraph==1));
         return sTrainOption.posGraph==1;
     }
 }

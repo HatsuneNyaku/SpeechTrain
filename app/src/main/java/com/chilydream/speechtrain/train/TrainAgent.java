@@ -21,71 +21,19 @@ import java.util.List;
 
 public class TrainAgent extends BasicAgent {
     private static final String TAG = "TrainAgent";
-//    Context parentContext;
-//    SeekBar mSbProgress;
-//    SeekBar mSbVolume;
-//    TextView mTvSentenceId;
-//    TextView mTvSentenceCorpusLabel;
-//    ImageView mImgPitch;
-//    Button mBtnNext;
-//    MediaAgent mMediaAgent;
-//    AssetManager mAssetMng;
-//    AudioList audioList;
-//    AlertDialog.Builder exitBuilder;
-//
-//    String templateSentenceId;
-//    TrainOption trainOption;
-//
-//    public Handler centerHandler;
-//    Handler uploadHandler;
-//    Handler progHandler;
-//    Thread uploadThread;
-//    Thread progThread;
-//    int repeatNum;
-
     Handler singleTrainHandler;
 
     public TrainAgent(Context context) {
         super(context);
-//        parentContext = context;
-//        mTvSentenceId = ((Activity) context).findViewById(R.id.train_tv_sentence_id);
-//        mTvSentenceCorpusLabel = ((Activity) context).findViewById(R.id.train_tv_sentence);
-//        mImgPitch = ((Activity) context).findViewById(R.id.train_graph_img_pitch);
-//        mBtnNext = ((Activity) context).findViewById(R.id.train_btn_next);
-//        mSbProgress = ((Activity) context).findViewById(R.id.train_sb_progress);
-//        mSbVolume = ((Activity) context).findViewById(R.id.train_sb_volume);
-//        audioList = AudioList.getAudioList();
-
         mBtnNext.setOnClickListener(view -> {
             mBtnNext.setClickable(false);
             if (!audioList.isAllFinished()) {
                 centerHandler.sendEmptyMessage(TrainCenterHandler.STAGE_START);
             }
         });
+        num_repeat_1 = TrainOption.getTrainOption().num_repeat_1;
 
-//        exitBuilder = new AlertDialog.Builder(context)
-//                .setTitle("提示").setMessage("录音已上传完毕")
-//                .setPositiveButton("确定退出", (dialog, which) -> {
-//                    ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-//                    List<ActivityManager.AppTask> appTaskList = activityManager.getAppTasks();
-//                    for (ActivityManager.AppTask appTask : appTaskList) {
-//                        appTask.finishAndRemoveTask();
-//                    }
-//                });
-//
-//        templateSentenceId = context.getResources().getString(R.string.train_finished_all_number);
-//        mMediaAgent = new MediaAgent(context);
-//        mAssetMng = context.getAssets();
-//        trainOption = TrainOption.getTrainOption();
-//        mMediaAgent.setMode(trainOption.posTrainType);
-
-//        centerHandler = new CenterHandler(this);
-//        progHandler = new ProgressUpdateHandler(this);
-//        uploadThread = new UploadThread(this);
-//        uploadThread.start();
-//        uploadHandler = ((UploadThread)uploadThread).getUploadHandler();
-
-        switch (trainOption.posTrainType) {
+        switch (trainOption.flag_train_type) {
             case TrainOption.MODE_LAR:
                 singleTrainHandler = new LARHandler(this);
                 break;
@@ -94,21 +42,6 @@ public class TrainAgent extends BasicAgent {
                 break;
             default:
                 singleTrainHandler = new RSIHandler(this);
-                break;
-        }
-
-        switch (trainOption.posRepeat_0) {
-            case 0:
-                repeatNum = 3;
-                break;
-            case 1:
-                repeatNum = 5;
-                break;
-            case 2:
-                repeatNum = 7;
-                break;
-            default:
-                repeatNum = 6;
                 break;
         }
 
@@ -132,7 +65,7 @@ public class TrainAgent extends BasicAgent {
                 agent.mTvSentenceId.setText(
                         String.format(
                                 agent.templateSentenceId,
-                                audioList.getFinishedNumber()+1, audioList.getAudioNumber()
+                                audioList.getFinishedNumber() + 1, audioList.getAudioNumber()
                         )
                 );
                 agent.mTvSentenceCorpusLabel.setText(unit.sentenceCorpusLabel);
@@ -151,15 +84,10 @@ public class TrainAgent extends BasicAgent {
                 // RSIHandler不关注 msg.what
                 // LARHandler则需要输入 STAGE_PLAY进行启动
 
-            } else if (msg.what== STAGE_NEXT) {
+            } else if (msg.what == STAGE_NEXT) {
                 Handler uploadHandler = agent.uploadHandler;
 
                 unit.setFinished();
-//                Message message = uploadHandler.obtainMessage();
-//                message.what = UploadThread.COMMAND_UPLOAD;
-//                message.obj = unit;
-//                uploadHandler.sendMessage(message);
-
                 audioList.nextCursor();
 
                 if (audioList.isAllFinished()) {
@@ -201,7 +129,7 @@ public class TrainAgent extends BasicAgent {
         public LARHandler(TrainAgent agent) {
             weakReference = new WeakReference<>(agent);
             train_count = 0;
-            repeat_num = agent.repeatNum;
+            repeat_num = agent.num_repeat_1;
             // 0表示一次都没做，1表示正在第一次训练
             // 假设总共训练5次，那么rc=6才意味着不进入训练流程
         }
@@ -214,16 +142,20 @@ public class TrainAgent extends BasicAgent {
             SeekBar bar = agent.mSbProgress;
             bar.setProgress(0);
 
-            train_count += 1;
-            if (train_count <= repeat_num) {
+            Log.d(TAG, "handleMessage: what:"+msg.what);
+            Log.d(TAG, "handleMessage: now "+train_count+" tgt "+repeat_num);
+            if (train_count < repeat_num) {
                 // todo：更新 unit的 cnt
                 if (msg.what == STAGE_PLAY) {
+                    Log.d(TAG, "handleMessage: STAGE_PLAY");
                     time_length = agent.mMediaAgent.getDuration();
                     bar.setMax(time_length);
                     agent.progThread = new ProgressUpdateThread(agent,
                             ProgressUpdateThread.MODE_AUDIO, time_length);
                     agent.progThread.start();
                 } else if (msg.what == STAGE_RECORD) {
+                    train_count += 1;
+                    // 开始录音才增加计数
                     time_length = agent.mMediaAgent.getRecordTime();
                     bar.setMax(time_length);
                     agent.progThread = new ProgressUpdateThread(agent,
@@ -232,7 +164,8 @@ public class TrainAgent extends BasicAgent {
                 }
             } else {
                 train_count = 0;
-                agent.centerHandler.sendEmptyMessage(TrainCenterHandler.STAGE_NEXT);
+                Log.d(TAG, "handleMessage: train_count计数清零");
+                agent.centerHandler.sendEmptyMessage(CenterHandler.STAGE_NEXT);
             }
         }
     }
@@ -243,7 +176,7 @@ public class TrainAgent extends BasicAgent {
 
         public RSIHandler(TrainAgent agent) {
             weakReference = new WeakReference<>(agent);
-            repeat_num = agent.repeatNum;
+            repeat_num = agent.num_repeat_1;
             train_count = 0;
         }
 
@@ -260,7 +193,8 @@ public class TrainAgent extends BasicAgent {
                 time_length = agent.mMediaAgent.getRecordTime();
                 bar.setMax(time_length);
                 agent.progThread = new ProgressUpdateThread(agent,
-                        ProgressUpdateThread.MODE_RECORD, time_length);
+                        ProgressUpdateThread.MODE_RSI, time_length);
+
                 agent.progThread.start();
             } else {
                 train_count = 0;
@@ -272,6 +206,8 @@ public class TrainAgent extends BasicAgent {
     private static class ProgressUpdateThread extends Thread {
         static final int MODE_AUDIO = 1;
         static final int MODE_RECORD = 2;
+        static final int MODE_RSI = 3;
+        boolean send_flag = false;
         private final WeakReference<TrainAgent> weakReference;
         long start_time, time_length;
         int prog_mode;
@@ -287,10 +223,14 @@ public class TrainAgent extends BasicAgent {
             super.start();
             TrainAgent agent = weakReference.get();
             start_time = System.currentTimeMillis();
+            send_flag = false;
 
             if (prog_mode == MODE_AUDIO) {
                 agent.mMediaAgent.playAudio();
             } else if (prog_mode == MODE_RECORD) {
+                agent.mMediaAgent.startRecord();
+            } else if (prog_mode == MODE_RSI) {
+                agent.mMediaAgent.playAudio();
                 agent.mMediaAgent.startRecord();
             }
         }
@@ -308,18 +248,35 @@ public class TrainAgent extends BasicAgent {
                 progHandler.sendMessage(message);
                 progHandler.removeCallbacks(agent.progThread);
                 if (prog_mode == MODE_RECORD) {
-                    agent.mMediaAgent.stopRecord();
-                    agent.singleTrainHandler.sendEmptyMessage(LARHandler.STAGE_PLAY);
-                    // 如果是RSI模式，那么这里的 msg.what就没有任何影响和意义
-                    // 如果是LAR模式，这里的 PLAY就代表着录音阶段结束，接下来是 PLAY阶段
+                    if (!send_flag) {
+                        send_flag = true;
+                        agent.mMediaAgent.stopRecord();
+                        agent.singleTrainHandler.sendEmptyMessage(LARHandler.STAGE_PLAY);
+                        // 如果是RSI模式，那么这里的 msg.what就没有任何影响和意义
+                        // 如果是LAR模式，这里的 PLAY就代表着录音阶段结束，接下来是 PLAY阶段
+                    }
                 } else if (prog_mode == MODE_AUDIO) {
-                    agent.singleTrainHandler.sendEmptyMessage(LARHandler.STAGE_RECORD);
-                    // 如果是RSI模式，那么这里的 msg.what就没有任何影响和意义
-                    // 如果是LAR模式，这里的 RECORD就代表着播放阶段结束，接下来是 RECORD阶段
+                    if (!send_flag) {
+                        send_flag = true;
+                        agent.singleTrainHandler.sendEmptyMessage(LARHandler.STAGE_RECORD);
+                        // 如果是RSI模式，那么这里的 msg.what就没有任何影响和意义
+                        // 如果是LAR模式，这里的 RECORD就代表着播放阶段结束，接下来是 RECORD阶段
+                    }
+                } else if (prog_mode == MODE_RSI) {
+                    if (!send_flag) {
+                        send_flag = true;
+                        agent.mMediaAgent.stopRecord();
+                        agent.singleTrainHandler.sendEmptyMessage(0);
+                        // 如果是RSI模式，那么这里的 msg.what就没有任何影响和意义
+                    }
                 }
             } else {
                 message.arg1 = (int) (cur_time - start_time);
-                // todo: 这里需要加入睡眠来减少资源消耗吗？例如改成过 10ms更新一次进度条
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 progHandler.sendMessage(message);
             }
         }

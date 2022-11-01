@@ -167,15 +167,18 @@ public class TestAgent extends BasicAgent {
             Handler progHandler = agent.progHandler;
             Message message = progHandler.obtainMessage();
 
+            if (finish_flag) {
+                return;
+            }
             if (cur_time - start_time >= time_length) {
                 message.arg1 = (int) time_length;
                 progHandler.sendMessage(message);
                 progHandler.removeCallbacks(agent.progThread);
 
-                agent.mMediaAgent.stopRecord();
                 if (!finish_flag) {
-                    agent.singleTestHandler.sendEmptyMessage(SingleTestHandler.STAGE_FINISH);
                     finish_flag = true;
+                    agent.mMediaAgent.stopRecord();
+                    agent.singleTestHandler.sendEmptyMessage(SingleTestHandler.STAGE_FINISH);
                 }
             } else {
                 message.arg1 = (int) (cur_time - start_time);

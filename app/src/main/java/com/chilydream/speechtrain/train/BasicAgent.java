@@ -37,7 +37,7 @@ public class BasicAgent {
     TrainOption trainOption;
 
     String templateSentenceId;
-    int repeatNum;
+    int num_repeat_1;
 
     public Handler centerHandler;
     public Handler uploadHandler;

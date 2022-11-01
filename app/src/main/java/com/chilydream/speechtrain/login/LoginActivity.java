@@ -1,5 +1,6 @@
 package com.chilydream.speechtrain.login;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
@@ -7,6 +8,8 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -37,6 +40,8 @@ public class LoginActivity extends AppCompatActivity {
     UserMessage userMessage;
     TrainOption trainOption;
 
+    boolean login_flag = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,7 +52,7 @@ public class LoginActivity extends AppCompatActivity {
         SystemMessage.trainAudioDir = new File(SystemMessage.rootDir, "train_audio");
         SystemMessage.recordDir = new File(SystemMessage.rootDir, "record_audio");
         SystemMessage.imgDir = new File(SystemMessage.rootDir, "img");
-        Log.d(TAG, "onCreate: "+SystemMessage.imgDir);
+        Log.d(TAG, "onCreate: " + SystemMessage.imgDir);
         if (!SystemMessage.trainAudioDir.exists()) {
             boolean mkdir_flag = SystemMessage.trainAudioDir.mkdirs();
             if (!mkdir_flag) {
@@ -101,28 +106,35 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         public void run() {
             JSONObject idJson = UserMessage.getIdJson();
-            Log.d(TAG, "run: id json:"+idJson.toString());
+            Log.d(TAG, "run: id json:" + idJson.toString());
 
             NetConnection netConnection = new NetConnection(ConfigConsts.API_LOGIN);
             netConnection.postJson(idJson);
             JSONObject resultJson = netConnection.getJsonResult();
             String auth_result = resultJson.getString("auth_result");
             String ques_result = resultJson.getString("ques_result");
-            Log.d(TAG, "auth_result:"+auth_result);
-            Log.d(TAG, "ques_result:"+ques_result);
+            Log.d(TAG, "auth_result:" + auth_result);
+            Log.d(TAG, "ques_result:" + ques_result);
 
             switch (auth_result) {
                 case ConfigConsts.RESULT_AUTH_FAIL:
                     Interaction.showToast(LoginActivity.this, "账号或密码错误");
+                    break;
                 case ConfigConsts.RESULT_AUTH_SUCCESS:
+                    login_flag = true;
+                    TrainOption.initTrainOption();
                     trainOption = TrainOption.getTrainOption();
                     if (ques_result.equals(ConfigConsts.RESULT_QUES_NOT_EXIST)) {
                         Intent intent = QuestionnaireActivity.newIntent(LoginActivity.this);
                         startActivity(intent);
-                    } else if (ques_result.equals(ConfigConsts.RESULT_QUES_EXIST)){
+                    } else if (ques_result.equals(ConfigConsts.RESULT_QUES_EXIST)) {
                         Intent intent = TrainOptionActivity.newIntent(LoginActivity.this);
                         startActivity(intent);
                     }
+                    break;
+                case ConfigConsts.RESULT_AUTH_FINISH:
+                    Interaction.showToast(LoginActivity.this, "你已完成所有训练");
+                    break;
             }
         }
     }
@@ -137,7 +149,9 @@ public class LoginActivity extends AppCompatActivity {
             Interaction.showToast(this, "密码不可为空");
             return;
         }
-
+//        if (!login_flag) {
+//
+//        }
         userMessage.setAccount(mEtAccount.getText().toString());
         userMessage.setPassword(mEtPassword.getText().toString());
 
@@ -149,36 +163,5 @@ public class LoginActivity extends AppCompatActivity {
 
         Thread thread = new Thread(new LoginCheck());
         thread.start();
-
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//
-//                JSONObject idJson = UserMessage.getIdJson();
-//                Log.d(TAG, "run: id json:"+idJson.toString());
-//
-//                NetConnection netConnection = new NetConnection(ConfigConsts.API_LOGIN);
-//                netConnection.postJson(idJson);
-//                JSONObject resultJson = netConnection.getJsonResult();
-//                String auth_result = resultJson.getString("auth_result");
-//                String ques_result = resultJson.getString("ques_result");
-//                Log.d(TAG, "auth_result:"+auth_result);
-//                Log.d(TAG, "ques_result:"+ques_result);
-//
-//                switch (auth_result) {
-//                    case ConfigConsts.RESULT_AUTH_FAIL:
-//                        Interaction.showToast(LoginActivity.this, "账号或密码错误");
-//                    case ConfigConsts.RESULT_AUTH_SUCCESS:
-//                        trainOption = TrainOption.getTrainOption();
-//                        if (ques_result.equals(ConfigConsts.RESULT_QUES_NOT_EXIST)) {
-//                            Intent intent = QuestionnaireActivity.newIntent(LoginActivity.this);
-//                            startActivity(intent);
-//                        } else if (ques_result.equals(ConfigConsts.RESULT_QUES_EXIST)){
-//                            Intent intent = TrainOptionActivity.newIntent(LoginActivity.this);
-//                            startActivity(intent);
-//                        }
-//                }
-//            }
-//        }).start();
     }
 }
